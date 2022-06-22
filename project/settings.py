@@ -30,6 +30,7 @@ ALLOWED_HOSTS = []
 LOGIN_REDIRECT_URL = '/main'
 LOGIN_URL = '/login'
 
+AUTH_USER_MODEL = 'app.Manager'
 
 # Application definition
 

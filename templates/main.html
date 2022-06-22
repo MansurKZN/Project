@@ -9,6 +9,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
+
     <title>Main</title>
   </head>
   <body background="{% static 'img/background.jpg' %}">
@@ -47,5 +48,78 @@
       </ul>
     </div>
 </nav>
+
+
+
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+  WorkReport
+</button>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">WorkReport</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+      <form method="post" action="" class="loginForm">
+          {% csrf_token %}
+          <div class="form-error">{{ form.non_field_errors }}</div>
+          <div class="mb-3">
+              <label for="exampleInputEmail1" class="form-label"><b>Date</b></label>
+              <input name="date"  id="datetime" type="datetime-local" required>
+          </div>
+          <div class="mb-3">
+              <label for="exampleInputPassword1" class="form-label"><b>Project</b></label>
+
+              <select name="project"  type="text" class="form-control" id="exampleInputPassword1" required>
+                <option value="" selected disabled hidden>Choose here</option>
+                {% for proj in projects %}
+                    <option>{{ proj }}</option>
+                {% endfor %}
+              </select>
+          </div>
+          <div class="mb-3">
+              <label for="exampleInputPassword1" class="form-label"><b>Engineer</b></label>
+              <select name="engineer"  type="text" class="form-control" id="exampleInputPassword1" required>
+              <option value="" selected disabled hidden>Choose here</option>
+                {% for engineer in engineers %}
+                    <option>{{ engineer }}</option>
+                {% endfor %}
+              </select>
+          </div>
+          <div class="mb-3">
+              <label for="exampleInputPassword1" class="form-label"><b>Work Type</b></label>
+              <select name="work_type"  type="text" class="form-control" id="exampleInputPassword1" required>
+              <option value="" selected disabled hidden>Choose here</option>
+                {% for work_type in work_types %}
+                    <option>{{ work_type }}</option>
+                {% endfor %}
+              </select>
+          </div>
+          <div class="mb-3">
+              <label for="exampleInputPassword1" class="form-label"><b>Period</b></label>
+              <input name="period"  type="number" class="form-control" id="exampleInputPassword1" required>
+          </div>
+          <div class="mb-3">
+              <label for="exampleInputPassword1" class="form-label"><b>Text</b></label>
+              <textarea name="text"  type="" class="form-control" id="exampleInputPassword1"></textarea>
+          </div>
+          <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+          </div>
+      </form>
+
+
+      </div>
+    </div>
+  </div>
+</div>
 
 </html>
