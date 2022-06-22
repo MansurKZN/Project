@@ -1,3 +1,23 @@
 .loginForm{
     margin: 15% 35%;
 }
+
+.form-error{
+    color: red;
+    size: A3;
+}
+
+.main-logout{
+    margin: 0px 500px;
+}
+
+.message{
+    color: #006b1b;
+    text-align: center;
+}
+
+.error{
+    color: red;
+    text-align: center;
+
+}

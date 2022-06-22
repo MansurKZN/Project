@@ -19,16 +19,15 @@
   </body>
 
 
-<form action="{% url 'login' %}" method="post" class="loginForm">
+<form method="post" class="loginForm">
     {% csrf_token %}
+  <div class="form-error">{{ form.non_field_errors }}</div>
   <div class="mb-3">
       <label for="exampleInputEmail1" class="form-label"><b>Login</b></label>
-{#    <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">#}
       {{ form.username }}
   </div>
   <div class="mb-3">
     <label for="exampleInputPassword1" class="form-label"><b>Password</b></label>
-{#    <input type="password" class="form-control" id="exampleInputPassword1">#}
       {{ form.password }}
   </div>
   <button type="submit" class="btn btn-primary">Submit</button>
