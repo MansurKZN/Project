@@ -1,5 +1,5 @@
 from datetime import datetime
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import AbstractUser
 
 from django.db import models
 
@@ -18,7 +18,7 @@ class Engineer(models.Model):
 
 class WorkReport(models.Model):
     manager = models.ForeignKey(Manager, on_delete=models.CASCADE)
-    date = models.DateTimeField(default=datetime.now, blank=True)
+    date = models.DateTimeField(default=datetime.now)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     engineer = models.ForeignKey(Engineer, on_delete=models.CASCADE)
     work_type = models.ForeignKey(WorkType, on_delete=models.CASCADE)

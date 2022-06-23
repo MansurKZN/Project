@@ -3,6 +3,7 @@ import datetime
 
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
+from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -39,40 +40,39 @@ class MainPage(View):
         work_reports = WorkReport.objects.filter(manager=user)
         for report in work_reports:
             a = []
-            a.append(report.date)
+            a.append(report.id)
+            a.append(report.date.__format__("%Y-%m-%d %H:%M"))
             a.append(report.project.name)
             a.append(report.engineer.full_name)
             a.append(report.work_type.name)
             a.append(report.period)
             a.append(report.text)
             arr.append(a)
+        date = datetime.datetime.now().__format__("%Y-%m-%dT%H:%M")
 
-        return render(request, 'main.html', {"user": user.username, 'projects': projects, 'engineers': engineers, 'work_types': work_types,  'arr': arr})
+        paginator = Paginator(arr, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        return render(request, 'main.html', {"user": user.username, 'projects': projects, 'engineers': engineers, 'work_types': work_types, 'date': date, 'arr': arr, 'page_obj': page_obj})
 
     def post(self, request):
-        user = request.user
-        print(request.POST.get("date"))
-        project = Project.objects.filter(name=request.POST.get("project"))[0]
-        engineer = Engineer.objects.filter(full_name=request.POST.get("engineer"))[0]
-        work_type = WorkType.objects.filter(name=request.POST.get("work_type"))[0]
-        work_report = WorkReport(manager=user, date=request.POST.get("date"), project=project, engineer=engineer, work_type=work_type, period=request.POST.get("period"), text=request.POST.get("text"))
-        work_report.save()
+        if request.POST.get("update_id"):
+            work_report = WorkReport.objects.get(id=request.POST.get("update_id"))
+            work_report.date = request.POST.get("update_date")
+            work_report.project.name = request.POST.get("update_project")
+            work_report.engineer.full_name = request.POST.get("update_engineer")
+            work_report.work_type.name = request.POST.get("update_work_type")
+            work_report.period = request.POST.get("update_period")
+            work_report.text = request.POST.get("update_text")
+            work_report.save()
+        else:
+            user = request.user
+            project = Project.objects.filter(name=request.POST.get("project"))[0]
+            engineer = Engineer.objects.filter(full_name=request.POST.get("engineer"))[0]
+            work_type = WorkType.objects.filter(name=request.POST.get("work_type"))[0]
+            work_report = WorkReport(manager=user, date=request.POST.get("date"), project=project, engineer=engineer, work_type=work_type, period=request.POST.get("period"), text=request.POST.get("text"))
+            work_report.save()
         return redirect('/main')
-        # projects = list(map(lambda x: x.name, Project.objects.all()))
-        # engineers = list(map(lambda x: x.full_name, Engineer.objects.all()))
-        # work_types = list(map(lambda x: x.name, WorkType.objects.all()))
-        # arr = []
-        # work_reports = WorkReport.objects.filter(manager=user)
-        # for report in work_reports:
-        #     a = []
-        #     a.append(report.date)
-        #     a.append(report.project.name)
-        #     a.append(report.engineer.full_name)
-        #     a.append(report.work_type.name)
-        #     a.append(report.period)
-        #     a.append(report.text)
-        #     arr.append(a)
-        # return render(request, 'main.html', {"user": user, 'projects': projects, 'engineers': engineers, 'work_types': work_types, 'arr': arr})
 
 
 class Profie(View):
@@ -124,6 +124,27 @@ class TimeControl(View):
             a = []
             a.append(project.name)
             company_sum = WorkReport.objects.filter(manager=user, date__range=(dateC, date2), project=project).aggregate(Sum('period')).get('period__sum')
+            sum += company_sum
+            a.append(company_sum)
+            arr.append(a)
+        a = ['', sum]
+        arr.append(a)
+        return render(request, 'timecontrol.html', {'user': user.username, 'arr': arr})
+
+    def post(self, request):
+        user = request.user
+        arr = []
+        sum = 0
+        dateC = datetime.date.fromisoformat(request.POST.get("date"))
+        date2 = dateC + datetime.timedelta(days=1)
+        projects = []
+        for i in WorkReport.objects.filter(manager=user, date__range=(dateC, date2)):
+            projects.append(i.project)
+        for project in list(set(projects)):
+            a = []
+            a.append(project.name)
+            company_sum = WorkReport.objects.filter(manager=user, date__range=(dateC, date2),
+                                                    project=project).aggregate(Sum('period')).get('period__sum')
             sum += company_sum
             a.append(company_sum)
             arr.append(a)

@@ -30,9 +30,24 @@
     margin: 3% 5%;
     width: 90%;
     height: 400px;
+    border-radius: 10px 10px;
     overflow: auto;
 }
 .table-wrapper-scroll-y {
     display: block;
     background-color: white;
+}
+
+.timecontroldate{
+    margin: 1% 40%;
+    width: 15%;
+}
+
+.timecontrolbutton{
+    width: 100px;
+    position: absolute;
+}
+
+.pagin{
+    margin: 0px 46%;
 }
