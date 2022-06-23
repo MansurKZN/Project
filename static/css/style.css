@@ -19,5 +19,20 @@
 .error{
     color: red;
     text-align: center;
+}
 
+.buttonWR{
+    margin: 1% 45%;
+}
+
+.my-custom-scrollbar {
+    position: relative;
+    margin: 3% 5%;
+    width: 90%;
+    height: 400px;
+    overflow: auto;
+}
+.table-wrapper-scroll-y {
+    display: block;
+    background-color: white;
 }
