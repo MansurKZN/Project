@@ -50,4 +50,33 @@
 </nav>
 
 
+
+<div class="table-wrapper-scroll-y my-custom-scrollbar">
+
+  <table class="table table-bordered mb-0">
+    <thead>
+      <tr>
+          {% for elem in columns %}
+               <th scope="col">{{ elem }}</th>
+          {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+        {% for elem in arr %}
+            <tr>
+                {% for i in elem %}
+                    <td>{{ i }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="submit" class="btn btn-primary">
+</form>
+
 </html>

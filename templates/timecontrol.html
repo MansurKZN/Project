@@ -22,7 +22,11 @@
   </body>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="/main">ICL</a>
+    {% if user.is_superuser %}
+        <a class="navbar-brand" href="/admininfo">ICL</a>
+    {% else %}
+        <a class="navbar-brand" href="/main">ICL</a>
+    {% endif %}
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -48,11 +52,14 @@
 
 <form method="post">
   {% csrf_token %}
-  <div class="timecontroldate">
-    <label for="inputDate">Введите дату:</label>
-    <input name="date" type="date" class="form-control" required>
-    <input type="submit" class="timecontrolbutton" value="Применить">
-  </div>
+    <div class="timecontroldate">
+        <div class="input-group mb-3">
+          <input name="date" type="date" class="form-control"  aria-describedby="basic-addon2" required>
+          <div class="input-group-append">
+            <button type="submit" class="input-group-text" id="basic-addon2">Применить</button>
+          </div>
+        </div>
+    </div>
 </form>
 
 <div class="table-wrapper-scroll-y my-custom-scrollbar">

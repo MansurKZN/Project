@@ -10,6 +10,21 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'css/style.css' %}"/>
 
+      <style>
+           td, th {
+            padding: 3px; /* Поля вокруг содержимого таблицы */
+            border: 1px solid #000; /* Параметры рамки */
+           }
+           th {
+            background: #afd792; /* Цвет фона */
+            color: #333;  /* Цвет текста */
+           }
+           tbody tr:hover {
+            background: #f3bd48; /* Цвет фона при наведении */
+           }
+      </style>
+
+
     <title>Main</title>
   </head>
   <body background="{% static 'img/background.jpg' %}">
@@ -66,7 +81,7 @@
       </div>
       <div class="modal-body">
 
-      <form method="post" action="" class="loginForm">
+      <form method="post" action="">
           {% csrf_token %}
           <div class="form-error">{{ form.non_field_errors }}</div>
           <div class="mb-3">
@@ -124,7 +139,7 @@
 
 <div class="table-wrapper-scroll-y my-custom-scrollbar">
 
-  <table class="table table-bordered table-striped mb-0">
+  <table class="table table-bordered mb-0">
     <thead>
       <tr>
         <th scope="col">Date</th>
@@ -137,7 +152,7 @@
     </thead>
     <tbody>
         {% for elem in page_obj %}
-            <tr>
+            <tr data-toggle="modal" data-target="#exampleModal{{ elem.0 }}">
                 <td>{{ elem.1 }}</td>
                 <td>{{ elem.2 }}</td>
                 <td>{{ elem.3 }}</td>
@@ -145,11 +160,6 @@
                 <td>{{ elem.5 }}</td>
                 <td>{{ elem.6 }}</td>
 
-                <td>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal{{ elem.0 }}">
-                      Change
-                    </button>
-                </td>
 
                 <div class="modal fade" id="exampleModal{{ elem.0 }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                       <div class="modal-dialog" role="document">
@@ -161,7 +171,7 @@
                             </button>
                           </div>
                           <div class="modal-body">
-                          <form method="post" class="loginForm">
+                          <form method="post">
                             {% csrf_token %}
                               <input name="update_id" value="{{ elem.0 }}" type="hidden">
                               <div class="mb-3">

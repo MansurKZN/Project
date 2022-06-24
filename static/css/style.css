@@ -39,15 +39,18 @@
 }
 
 .timecontroldate{
-    margin: 1% 40%;
-    width: 15%;
+    margin: 1% 37%;
+    width: 25%;
 }
 
 .timecontrolbutton{
     width: 100px;
-    position: absolute;
 }
 
 .pagin{
     margin: 0px 46%;
+}
+
+.TClabel{
+    color: white;
 }

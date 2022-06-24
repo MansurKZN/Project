@@ -1,5 +1,8 @@
+import os
 from datetime import date
 import datetime
+import pandas as pd
+import requests
 
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
@@ -10,7 +13,8 @@ from django.urls import reverse_lazy
 from django.views import View
 
 from app.forms import LoginForm, PasswordChangeForm
-from app.models import Project, Engineer, WorkType, WorkReport
+from app.models import Project, Engineer, WorkType, WorkReport, Manager
+from project import settings
 
 
 class Login(LoginView):
@@ -57,11 +61,12 @@ class MainPage(View):
 
     def post(self, request):
         if request.POST.get("update_id"):
+
             work_report = WorkReport.objects.get(id=request.POST.get("update_id"))
             work_report.date = request.POST.get("update_date")
-            work_report.project.name = request.POST.get("update_project")
-            work_report.engineer.full_name = request.POST.get("update_engineer")
-            work_report.work_type.name = request.POST.get("update_work_type")
+            work_report.project = Project.objects.filter(name=request.POST.get("update_project"))[0]
+            work_report.engineer = Engineer.objects.filter(full_name=request.POST.get("update_engineer"))[0]
+            work_report.work_type = WorkType.objects.filter(name=request.POST.get("update_work_type"))[0]
             work_report.period = request.POST.get("update_period")
             work_report.text = request.POST.get("update_text")
             work_report.save()
@@ -105,8 +110,81 @@ class AdminInfo(View):
 
     def get(self, request):
         user = request.user
-        return render(request, 'admin.html', {'user': user.username})
+        arr = []
+        date_start = date(date.today().year, date.today().month, 1)
+        date_end = date(date.today().year, date.today().month + 1, 1)
+        projects = Project.objects.all()
+        columns = []
+        columns.append("Manager")
+        columns.append("Work Time")
+        for project in projects:
+            columns.append(project.name)
 
+        for manager in Manager.objects.filter(is_superuser=False):
+            a = []
+            work_time = manager.work_time
+            a.append(f'{manager.first_name} {manager.last_name}')
+            a.append(work_time)
+            person_sum = 0
+            for project in projects:
+                time_for_project = WorkReport.objects.filter(manager=manager, date__range=(date_start, date_end), project=project).aggregate(Sum('period')).get('period__sum')
+                if time_for_project:
+                    percent_project_work = round(((int(time_for_project) / 60) * 100 / work_time) / 100, 3)
+                else:
+                    percent_project_work = 0
+                person_sum += percent_project_work
+                a.append(percent_project_work)
+            a.append(person_sum)
+            arr.append(a)
+        return render(request, 'admin.html', {'user': user.username, 'columns': columns, 'arr': arr})
+
+    def post(self, request):
+        arr = []
+        date_start = date(date.today().year, date.today().month, 1)
+        date_end = date(date.today().year, date.today().month + 1, 1)
+        projects = Project.objects.all()
+        columns = []
+        columns.append("Manager")
+        columns.append("Work Time")
+        for project in projects:
+            columns.append(project.name)
+        arr.append(columns)
+        for manager in Manager.objects.filter(is_superuser=False):
+            a = []
+            work_time = manager.work_time
+            a.append(f'{manager.first_name} {manager.last_name}')
+            a.append(work_time)
+            person_sum = 0
+            for project in projects:
+                time_for_project = WorkReport.objects.filter(manager=manager, date__range=(date_start, date_end),
+                                                             project=project).aggregate(Sum('period')).get(
+                    'period__sum')
+                if time_for_project:
+                    percent_project_work = round(((int(time_for_project) / 60) * 100 / work_time) / 100, 3)
+                else:
+                    percent_project_work = 0
+                person_sum += percent_project_work
+                a.append(percent_project_work)
+            a.append(person_sum)
+            arr.append(a)
+
+
+        df = pd.DataFrame(arr)
+        df.columns = df.iloc[0]
+        df.drop(df.index[0], inplace=True)
+        file_name = f'Work_time_{date_start}_{date_end}.xlsx'
+        df.to_excel(excel_writer=f'{settings.BASE_DIR}/static/{file_name}', index=False)
+
+        # host_port = request.META['HTTP_HOST']
+        # requests.get(f'http://{host_port}/static/{file_name}')
+
+        # redirect(f'/static/{file_name}')
+        #
+        # for item in os.listdir(f"{settings.BASE_DIR}/static/"):
+        #     if item.endswith(".xlsx"):
+        #         os.remove(item)
+
+        return redirect(f'/static/{file_name}')
 
 class TimeControl(View):
 
@@ -114,40 +192,40 @@ class TimeControl(View):
         user = request.user
         arr = []
         sum = 0
-        dateC = date.today()
-        date2 = dateC + datetime.timedelta(days=1)
+        date_start = date.today()
+        date_end = date_start + datetime.timedelta(days=1)
         projects = []
-        for i in WorkReport.objects.filter(manager=user, date__range=(dateC, date2)):
+        for i in WorkReport.objects.filter(manager=user, date__range=(date_start, date_end)):
             projects.append(i.project)
 
         for project in list(set(projects)):
             a = []
             a.append(project.name)
-            company_sum = WorkReport.objects.filter(manager=user, date__range=(dateC, date2), project=project).aggregate(Sum('period')).get('period__sum')
+            company_sum = WorkReport.objects.filter(manager=user, date__range=(date_start, date_end), project=project).aggregate(Sum('period')).get('period__sum')
             sum += company_sum
             a.append(company_sum)
             arr.append(a)
         a = ['', sum]
         arr.append(a)
-        return render(request, 'timecontrol.html', {'user': user.username, 'arr': arr})
+        return render(request, 'timecontrol.html', {'user': user, 'arr': arr})
 
     def post(self, request):
         user = request.user
         arr = []
         sum = 0
-        dateC = datetime.date.fromisoformat(request.POST.get("date"))
-        date2 = dateC + datetime.timedelta(days=1)
+        date_start = datetime.date.fromisoformat(request.POST.get("date"))
+        date_end = date_start + datetime.timedelta(days=1)
         projects = []
-        for i in WorkReport.objects.filter(manager=user, date__range=(dateC, date2)):
+        for i in WorkReport.objects.filter(manager=user, date__range=(date_start, date_end)):
             projects.append(i.project)
         for project in list(set(projects)):
             a = []
             a.append(project.name)
-            company_sum = WorkReport.objects.filter(manager=user, date__range=(dateC, date2),
+            company_sum = WorkReport.objects.filter(manager=user, date__range=(date_start, date_end),
                                                     project=project).aggregate(Sum('period')).get('period__sum')
             sum += company_sum
             a.append(company_sum)
             arr.append(a)
         a = ['', sum]
         arr.append(a)
-        return render(request, 'timecontrol.html', {'user': user.username, 'arr': arr})
+        return render(request, 'timecontrol.html', {'user': user, 'arr': arr})
