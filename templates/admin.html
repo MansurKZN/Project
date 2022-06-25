@@ -50,6 +50,11 @@
 </nav>
 
 
+<form class="admin-proj-form" method="post">
+    {% csrf_token %}
+  <input name="date" type="month" value="{{ date }}" required>
+  <input type="submit" value="show">
+</form>
 
 <div class="table-wrapper-scroll-y my-custom-scrollbar">
 
@@ -74,9 +79,11 @@
 
 </div>
 
-<form method="post">
+<form class="buttonWR" method="post">
     {% csrf_token %}
-    <input type="submit" class="btn btn-primary">
+
+    <input type="hidden" name="export_date" value="{{ date }}">
+    <input type="submit" class="btn btn-primary" value="Export to excel">
 </form>
 
 </html>

@@ -216,10 +216,17 @@
                               </div>
 
                                 <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Save changes</button>
+                                    <button type="submit" class="btn btn-primary">Save changes</button>
                                 </div>
                            </form>
+                              <div class="modal-footer">
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="delete" value="{{ elem.0 }}">
+                                            <button type="submit" class="change-delete-button">Delete</button>
+                                        </form>
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                              </div>
                           </div>
                         </div>
                       </div>
@@ -231,17 +238,6 @@
   </table>
 
 </div>
-
-{#{% if page_obj.has_previous %}#}
-{#    <li class="page-num">#}
-{#        <a href="?page={{ page_obj.previous_page_number }}"><h1>&larr;</h1></a>#}
-{#    </li>#}
-{#{% endif %}#}
-{#{% if page_obj.has_next %}#}
-{#    <li class="page-num">#}
-{#        <a href="?page={{ page_obj.next_page_number }}"><h1>&rarr;</h1></a>#}
-{#    </li>#}
-{#{% endif %}#}
 
 <div class="pagin">
 <nav aria-label="Page navigation example">

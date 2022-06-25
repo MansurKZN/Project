@@ -1,6 +1,9 @@
+import numbers
 import os
 from datetime import date
 import datetime
+
+import openpyxl
 import pandas as pd
 import requests
 
@@ -11,6 +14,7 @@ from django.db.models import Sum
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import View
+from openpyxl.styles import Border, Side, Font
 
 from app.forms import LoginForm, PasswordChangeForm
 from app.models import Project, Engineer, WorkType, WorkReport, Manager
@@ -61,7 +65,6 @@ class MainPage(View):
 
     def post(self, request):
         if request.POST.get("update_id"):
-
             work_report = WorkReport.objects.get(id=request.POST.get("update_id"))
             work_report.date = request.POST.get("update_date")
             work_report.project = Project.objects.filter(name=request.POST.get("update_project"))[0]
@@ -70,6 +73,8 @@ class MainPage(View):
             work_report.period = request.POST.get("update_period")
             work_report.text = request.POST.get("update_text")
             work_report.save()
+        elif request.POST.get("delete"):
+            WorkReport.objects.get(id=request.POST.get("delete")).delete()
         else:
             user = request.user
             project = Project.objects.filter(name=request.POST.get("project"))[0]
@@ -115,76 +120,117 @@ class AdminInfo(View):
         date_end = date(date.today().year, date.today().month + 1, 1)
         projects = Project.objects.all()
         columns = []
-        columns.append("Manager")
-        columns.append("Work Time")
+        columns.append("")
+        columns.append("")
+        columns.append("Раб часы")
         for project in projects:
             columns.append(project.name)
 
         for manager in Manager.objects.filter(is_superuser=False):
             a = []
             work_time = manager.work_time
+            a.append(manager.work_position)
             a.append(f'{manager.first_name} {manager.last_name}')
             a.append(work_time)
-            person_sum = 0
             for project in projects:
                 time_for_project = WorkReport.objects.filter(manager=manager, date__range=(date_start, date_end), project=project).aggregate(Sum('period')).get('period__sum')
                 if time_for_project:
-                    percent_project_work = round(((int(time_for_project) / 60) * 100 / work_time) / 100, 3)
+                    percent_project_work = round(((int(time_for_project) / 60) * 100 / work_time) / 100, 2)
                 else:
-                    percent_project_work = 0
-                person_sum += percent_project_work
+                    percent_project_work = 0.0
                 a.append(percent_project_work)
-            a.append(person_sum)
             arr.append(a)
-        return render(request, 'admin.html', {'user': user.username, 'columns': columns, 'arr': arr})
+        return render(request, 'admin.html', {'user': user.username, 'columns': columns, 'arr': arr, 'date': datetime.datetime.now().strftime('%Y-%m')})
 
     def post(self, request):
+        for item in os.listdir(f"{settings.BASE_DIR}/static/"):
+            if item.endswith(".xlsx"):
+                os.remove(f"{settings.BASE_DIR}/static/{item}")
+
         arr = []
-        date_start = date(date.today().year, date.today().month, 1)
-        date_end = date(date.today().year, date.today().month + 1, 1)
+        if request.POST.get("date"):
+            d = datetime.datetime.strptime(request.POST.get("date"), '%Y-%m')
+            date_start = date(d.year, d.month, 1)
+            date_end = date(date_start.year, date_start.month + 1, 1)
+        else:
+            d = datetime.datetime.strptime(request.POST.get("export_date"), '%Y-%m')
+            date_start = date(d.year, d.month, 1)
+            date_end = date(date_start.year, date_start.month + 1, 1)
+
         projects = Project.objects.all()
         columns = []
-        columns.append("Manager")
-        columns.append("Work Time")
+        columns.append("")
+        columns.append("")
+        columns.append("Раб часы")
+        max_name_len = 0
+        max_proj_len = 0
         for project in projects:
+            if len(project.name) > max_proj_len:
+                max_proj_len = len(project.name)
             columns.append(project.name)
         arr.append(columns)
         for manager in Manager.objects.filter(is_superuser=False):
+            if len(f'{manager.first_name} {manager.last_name}') > max_name_len:
+                max_name_len = len(f'{manager.first_name} {manager.last_name}')
             a = []
             work_time = manager.work_time
+            a.append(manager.work_position)
             a.append(f'{manager.first_name} {manager.last_name}')
             a.append(work_time)
-            person_sum = 0
             for project in projects:
                 time_for_project = WorkReport.objects.filter(manager=manager, date__range=(date_start, date_end),
                                                              project=project).aggregate(Sum('period')).get(
                     'period__sum')
                 if time_for_project:
-                    percent_project_work = round(((int(time_for_project) / 60) * 100 / work_time) / 100, 3)
+                    percent_project_work = round(((int(time_for_project) / 60) * 100 / work_time) / 100, 2)
                 else:
-                    percent_project_work = 0
-                person_sum += percent_project_work
+                    percent_project_work = 0.0
                 a.append(percent_project_work)
-            a.append(person_sum)
             arr.append(a)
 
+        if request.POST.get("date"):
+            columns = arr[0]
+            arr.pop(0)
+            return render(request, 'admin.html', {'user': request.user.username, 'columns': columns, 'arr': arr, 'date': date_start.strftime('%Y-%m')})
 
-        df = pd.DataFrame(arr)
-        df.columns = df.iloc[0]
-        df.drop(df.index[0], inplace=True)
+
+        wb = openpyxl.Workbook()
+        sheet = wb.active
+        for row in arr:
+
+            sheet.append(row)
+
+        for i in sheet.columns:
+            sheet.column_dimensions[i[0].column_letter].width = max_proj_len + 3
+
+        sheet.column_dimensions['B'].width = max_name_len + 1
+
+        last_row_num = 0
+        last_column_char = ''
+        for column in sheet.columns:
+            for elem in column:
+                if isinstance(elem.value, numbers.Number):
+                    sheet.cell(column=elem.column, row=elem.row).border = Border(left=Side(border_style='thin', color='FF000000'),
+                                         right=Side(border_style='thin', color='00000000'),
+                                         top=Side(border_style='thin', color='00000000'),
+                                         bottom=Side(border_style='thin', color='00000000'))
+                last_row_num = elem.row
+
+            if column[0].column > 3:
+                sheet.cell(row=last_row_num+1, column=column[0].column).value = f'=SUM({column[0].column_letter}2:{column[0].column_letter}{last_row_num})'
+                sheet.cell(row=last_row_num+1, column=column[0].column).font = Font(bold=True)
+            last_column_char = column[0].column_letter
+
+        for row in sheet.rows:
+            if row[0].row > 1 and row[0].row <= last_row_num:
+                sheet.cell(row=row[0].row, column=len(row)+1).value = f'=SUM(D{row[0].row}:{last_column_char}{row[0].row})'
+                sheet.cell(row=row[0].row, column=len(row)+1).font = Font(bold=True)
+
         file_name = f'Work_time_{date_start}_{date_end}.xlsx'
-        df.to_excel(excel_writer=f'{settings.BASE_DIR}/static/{file_name}', index=False)
-
-        # host_port = request.META['HTTP_HOST']
-        # requests.get(f'http://{host_port}/static/{file_name}')
-
-        # redirect(f'/static/{file_name}')
-        #
-        # for item in os.listdir(f"{settings.BASE_DIR}/static/"):
-        #     if item.endswith(".xlsx"):
-        #         os.remove(item)
+        wb.save(f'{settings.BASE_DIR}/static/{file_name}')
 
         return redirect(f'/static/{file_name}')
+
 
 class TimeControl(View):
 
