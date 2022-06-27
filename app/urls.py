@@ -10,4 +10,5 @@ urlpatterns = [
     path('profile/', login_required(Profie.as_view()), name='profile'),
     path('main/timecontrol', login_required(TimeControl.as_view()), name='timecontrol'),
     path('admininfo/', staff_member_required(AdminInfo.as_view(), login_url='/login'), name='admin'),
+    path('adminreport/', staff_member_required('', login_url='/login'), name='adminreport'),
 ]

@@ -4,8 +4,6 @@ from datetime import date
 import datetime
 
 import openpyxl
-import pandas as pd
-import requests
 
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
@@ -61,7 +59,7 @@ class MainPage(View):
         paginator = Paginator(arr, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        return render(request, 'main.html', {"user": user.username, 'projects': projects, 'engineers': engineers, 'work_types': work_types, 'date': date, 'arr': arr, 'page_obj': page_obj})
+        return render(request, 'main.html', {"user": user, 'projects': projects, 'engineers': engineers, 'work_types': work_types, 'date': date, 'arr': arr, 'page_obj': page_obj})
 
     def post(self, request):
         if request.POST.get("update_id"):
