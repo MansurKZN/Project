@@ -32,7 +32,7 @@
       <li class="nav-item">
         <a class="nav-link" href="{% url 'adminreport' %}">Report</a>
       </li>
-      <li class="nav-item">
+      <li class="nav-item active">
         <a class="nav-link" href="{% url 'adminimportengineers' %}">Import Engineers</a>
       </li>
     </ul>
@@ -50,40 +50,17 @@
 </nav>
 
 
-<form class="admin-proj-form" method="post">
+<form class="admin-proj-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-  <input name="date" type="month" value="{{ date }}" required>
-  <input type="submit" value="show">
-</form>
+    <label for="formFileMultiple" class="form-label text-white"><h5>Select file to import</h5></label>
+    {% if error|length > 0 %}
+        <h5 style="color:red" class="text-center">{{ error }}</h5>
+    {% else %}
+        <h5 style="color:greenyellow" class="text-center">{{ message }}</h5>
+    {% endif %}
 
-<div class="table-wrapper-scroll-y my-custom-scrollbar">
-
-  <table class="table table-bordered mb-0">
-    <thead>
-      <tr>
-          {% for elem in columns %}
-               <th scope="col">{{ elem }}</th>
-          {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-        {% for elem in arr %}
-            <tr>
-                {% for i in elem %}
-                    <td>{{ i }}</td>
-                {% endfor %}
-            </tr>
-        {% endfor %}
-    </tbody>
-  </table>
-
-</div>
-
-<form class="buttonWR" method="post">
-    {% csrf_token %}
-
-    <input type="hidden" name="export_date" value="{{ date }}">
-    <input type="submit" class="btn btn-primary" value="Export to excel">
-</form>
+    <input name="file" class="form-control" accept=".txt" type="file" id="formFileMultiple" multiple required/>
+    <input class="btn btn-primary" type="submit"/>
+</form>>
 
 </html>

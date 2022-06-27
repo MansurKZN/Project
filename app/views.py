@@ -26,13 +26,13 @@ class Login(LoginView):
     def get_success_url(self):
         user = self.request.user
         if user.is_superuser:
-            return reverse_lazy('admin')
+            return reverse_lazy('admininfo')
         else:
             return reverse_lazy('main')
 
 def logout_user(request):
     logout(request)
-    return redirect('login')
+    return redirect('/login')
 
 
 class MainPage(View):
@@ -228,6 +228,144 @@ class AdminInfo(View):
         wb.save(f'{settings.BASE_DIR}/static/{file_name}')
 
         return redirect(f'/static/{file_name}')
+
+
+class AdminReport(View):
+
+    def get(self, request):
+        user = request.user
+
+        arr = []
+        date_start = date(date.today().year, date.today().month, 1)
+        date_end = date(date.today().year, date.today().month + 1, 1)
+        columns = []
+        columns.append("Дата")
+        columns.append("Время")
+        columns.append("Проект")
+        columns.append("Инженер")
+        columns.append("Работа")
+        columns.append("Время (мин.)")
+        columns.append("Поддержка ТАС")
+        columns.append("Примечание")
+
+        for report in WorkReport.objects.filter(date__range=(date_start, date_end)):
+            a = []
+            a.append(report.date.strftime('%d.%m.%Y'))
+            a.append(report.date.strftime('%H:%M'))
+            a.append(report.project.name)
+            a.append(report.engineer.full_name)
+            a.append(report.work_type.name)
+            a.append(report.period)
+            a.append(f'{report.manager.last_name} {report.manager.first_name}')
+            a.append(report.text)
+            arr.append(a)
+
+        return render(request, 'admin_report.html', {'user': user.username, 'columns': columns, 'arr': arr, 'date': date_start.strftime('%Y-%m')})
+
+    def post(self, request):
+        for item in os.listdir(f"{settings.BASE_DIR}/static/"):
+            if item.endswith(".xlsx"):
+                os.remove(f"{settings.BASE_DIR}/static/{item}")
+
+        arr = []
+        if request.POST.get("date"):
+            d = datetime.datetime.strptime(request.POST.get("date"), '%Y-%m')
+            date_start = date(d.year, d.month, 1)
+            date_end = date(date_start.year, date_start.month + 1, 1)
+        else:
+            d = datetime.datetime.strptime(request.POST.get("export_date"), '%Y-%m')
+            date_start = date(d.year, d.month, 1)
+            date_end = date(date_start.year, date_start.month + 1, 1)
+
+        columns = []
+        columns.append("Дата")
+        columns.append("Время")
+        columns.append("Проект")
+        columns.append("Инженер")
+        columns.append("Работа")
+        columns.append("Время (мин.)")
+        columns.append("Поддержка ТАС")
+        columns.append("Примечание")
+
+        max_project_len = 0
+        max_engineer_len = 0
+        max_work_type_len = 0
+        max_manager_len = 15
+        max_text_len = 0
+
+        for report in WorkReport.objects.filter(date__range=(date_start, date_end)):
+            a = []
+            if len(report.project.name) > max_project_len:
+                max_project_len = len(report.project.name)
+            if len(report.engineer.full_name) > max_engineer_len:
+                max_engineer_len = len(report.engineer.full_name)
+            if len(report.work_type.name) > max_work_type_len:
+                max_work_type_len = len(report.work_type.name)
+            if len(f'{report.manager.last_name} {report.manager.first_name}') > max_manager_len:
+                max_manager_len = len(f'{report.manager.last_name} {report.manager.first_name}')
+            if len(report.text) > max_text_len:
+                max_text_len = len(report.text)
+
+            a.append(report.date.strftime('%d.%m.%Y'))
+            a.append(report.date.strftime('%H:%M'))
+            a.append(report.project.name)
+            a.append(report.engineer.full_name)
+            a.append(report.work_type.name)
+            a.append(report.period)
+            a.append(f'{report.manager.last_name} {report.manager.first_name}')
+            a.append(report.text)
+            arr.append(a)
+
+        if request.POST.get("date"):
+            return render(request, 'admin_report.html', {'user': request.user.username, 'columns': columns, 'arr': arr, 'date': date_start.strftime('%Y-%m')})
+
+
+        wb = openpyxl.Workbook()
+        sheet = wb.active
+        sheet.append(columns)
+        for row in arr:
+            sheet.append(row)
+
+        sheet.column_dimensions['A'].width = 12
+        sheet.column_dimensions['C'].width = max_project_len + 3
+        sheet.column_dimensions['D'].width = max_engineer_len + 3
+        sheet.column_dimensions['E'].width = max_work_type_len + 3
+        sheet.column_dimensions['F'].width = 14
+        sheet.column_dimensions['G'].width = max_manager_len + 3
+        sheet.column_dimensions['H'].width = max_text_len + 3
+
+        for i in sheet[1]:
+            i.font = Font(bold=True)
+
+        file_name = f'Work_report_{date_start}_{date_end}.xlsx'
+        wb.save(f'{settings.BASE_DIR}/static/{file_name}')
+
+        return redirect(f'/static/{file_name}')
+
+
+class ImportEngineers(View):
+
+    def get(self, request):
+        user = request.user
+        return render(request, 'import_engineers.html', {'user': user.username})
+
+    def post(self, request):
+        user = request.user
+        # file = request.FILES['file']
+
+        try:
+            for engineer in request.FILES['file']:
+                message = 'There are no new engineers in the file'
+                error = ''
+                engineer = engineer.decode('UTF-8').rstrip()
+                if not Engineer.objects.filter(full_name=engineer).exists():
+                    Engineer(full_name=engineer).save()
+                    message = 'Successfully added'
+        except:
+            error = 'Error'
+        return render(request, 'import_engineers.html', {'user': user.username, 'message': message, 'error': error})
+
+
 
 
 class TimeControl(View):
