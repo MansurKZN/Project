@@ -30,6 +30,7 @@ class Login(LoginView):
         else:
             return reverse_lazy('main')
 
+
 def logout_user(request):
     logout(request)
     return redirect('/login')
@@ -54,12 +55,15 @@ class MainPage(View):
             a.append(report.period)
             a.append(report.text)
             arr.append(a)
+        arr = arr[::-1]
         date = datetime.datetime.now().__format__("%Y-%m-%dT%H:%M")
 
         paginator = Paginator(arr, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        return render(request, 'main.html', {"user": user, 'projects': projects, 'engineers': engineers, 'work_types': work_types, 'date': date, 'arr': arr, 'page_obj': page_obj})
+        if not page_number:
+            page_number = 1
+        return render(request, 'main.html', {"user": user, 'projects': projects, 'engineers': engineers, 'work_types': work_types, 'date': date, 'arr': arr, 'page_obj': page_obj, 'page': page_number})
 
     def post(self, request):
         if request.POST.get("update_id"):
@@ -191,7 +195,6 @@ class AdminInfo(View):
             arr.pop(0)
             return render(request, 'admin.html', {'user': request.user.username, 'columns': columns, 'arr': arr, 'date': date_start.strftime('%Y-%m')})
 
-
         wb = openpyxl.Workbook()
         sheet = wb.active
         for row in arr:
@@ -319,7 +322,6 @@ class AdminReport(View):
         if request.POST.get("date"):
             return render(request, 'admin_report.html', {'user': request.user.username, 'columns': columns, 'arr': arr, 'date': date_start.strftime('%Y-%m')})
 
-
         wb = openpyxl.Workbook()
         sheet = wb.active
         sheet.append(columns)
@@ -351,8 +353,6 @@ class ImportEngineers(View):
 
     def post(self, request):
         user = request.user
-        # file = request.FILES['file']
-
         try:
             for engineer in request.FILES['file']:
                 message = 'There are no new engineers in the file'
@@ -364,8 +364,6 @@ class ImportEngineers(View):
         except:
             error = 'Error'
         return render(request, 'import_engineers.html', {'user': user.username, 'message': message, 'error': error})
-
-
 
 
 class TimeControl(View):

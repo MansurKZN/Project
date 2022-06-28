@@ -48,11 +48,16 @@
 }
 
 .pagin{
-    margin: 0px 46%;
+    margin: 0px 45%;
 }
 
 .TClabel{
     color: white;
+}
+
+.col-4 {
+  width: 33.3333333%;
+  float: left;
 }
 
 .change-delete-button{
@@ -79,4 +84,9 @@
     margin: 1% 40%;
 }
 
+.timeButt{
+    width: 15%;
+    border-radius: 10px;
+
+}
 
