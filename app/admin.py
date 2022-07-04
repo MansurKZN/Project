@@ -1,12 +1,25 @@
 from django.contrib import admin
 from django.contrib.admin import display
+from django.contrib.auth.admin import UserAdmin
 
+from app.forms import UserCreationForm
 from app.models import Manager, Project, WorkType, Engineer, WorkReport
 
 
 @admin.register(Manager)
-class ManagerAdmin(admin.ModelAdmin):
+class ManagerAdmin(UserAdmin):
+    add_form = UserCreationForm
     list_display = ('first_name', 'last_name', 'work_time', 'work_position')
+    fieldsets = (
+        (None, {'fields': ('username', 'password', 'first_name', 'last_name', 'work_time', 'work_position')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password', 'first_name', 'last_name', 'work_time', 'work_position')}
+         ),
+    )
+    filter_horizontal = ()
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):

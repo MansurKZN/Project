@@ -5,7 +5,7 @@ from django.db import models
 
 
 class Manager(AbstractUser):
-    work_time = models.IntegerField(null=True, blank=True, default=None)
+    work_time = models.IntegerField()
     work_position = models.CharField(max_length=100, default="")
 
 class Project(models.Model):
